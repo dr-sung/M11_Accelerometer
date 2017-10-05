@@ -1,6 +1,9 @@
 <resources>
     <string name="app_name">M11_Accelerometer</string>
-    <string name="raw_y_string">Raw Y:</string>
-    <string name="raw_x_string">Raw X:</string>
-    <string name="raw_z_string">Raw Z:</string>
+    <string name="button_label">Show all sensors</string>
+    <string name="no_accelerometer">No Accelerometer available on this device!</string>
+    <string name="x_message">Raw X: %1$f</string>
+    <string name="y_message">Raw Y: %1$f</string>
+    <string name="z_message">Raw Z: %1$f</string>
+    <string name="title_sensor_list">All Sensors on This Device</string>
 </resources>
