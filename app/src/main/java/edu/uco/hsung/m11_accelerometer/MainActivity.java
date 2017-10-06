@@ -17,18 +17,30 @@ public class MainActivity extends Activity {
     private SensorManager sensorManager;
     private Sensor accelerometer;
 
-    private TextView xView, yView, zView;
+    private TextView xView;
+    private TextView yView;
+    private TextView zView;
     private Button allSensors;
     private Listener listener;
+
+    private final float ALPHA = 0.8f;
+    private final long UPDATE_INTERVAL = 500; // 500ms
+
+    private float[] current = new float[3];
+    private float[] constant_value = new float[3];
+    private float[] acceleration = new float[3];
+
+    private long lastUpdate;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        xView = findViewById(R.id.x_view);
-        yView = findViewById(R.id.y_view);
-        zView = findViewById(R.id.z_view);
+        xView = findViewById(R.id.x_tv);
+        yView = findViewById(R.id.y_tv);
+        zView = findViewById(R.id.z_tv);
+
         allSensors = findViewById(R.id.show_sensors);
 
         listener = new Listener(); // accelerometer listener
@@ -46,6 +58,8 @@ public class MainActivity extends Activity {
                 startActivity(intent);
             }
         });
+
+        lastUpdate = System.currentTimeMillis();
 
 
     }
@@ -68,15 +82,49 @@ public class MainActivity extends Activity {
         @Override
         public void onSensorChanged(SensorEvent event) {
             if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+
+                long currentTime = System.currentTimeMillis();
+
+                if (currentTime - lastUpdate < UPDATE_INTERVAL) {
+                    return; // update only every 0.5 sec
+                }
+
+                lastUpdate = currentTime;
+
+                for (int i = 0; i < event.values.length; i++) {
+                    current[i] = event.values[i];
+                }
+
+                lowPassFilter(current, constant_value);
+                highPassFilter(current, constant_value, acceleration);
+
                 Resources res = getResources();
-                xView.setText(String.format(res.getString(R.string.x_message), event.values[0]));
-                yView.setText(String.format(res.getString(R.string.y_message), event.values[1]));
-                zView.setText(String.format(res.getString(R.string.z_message), event.values[2]));
+                xView.setText(String.format(res.getString(R.string.x_values),
+                        current[0], constant_value[0], acceleration[0]));
+                yView.setText(String.format(res.getString(R.string.y_values),
+                        current[1], constant_value[1], acceleration[1]));
+                zView.setText(String.format(res.getString(R.string.z_values),
+                        current[2], constant_value[2], acceleration[2]));
+
             }
         }
 
         @Override
         public void onAccuracyChanged(Sensor sensor, int accuracy) {
+        }
+    }
+
+    // suppress transient forces (high frequency factors)
+    private void lowPassFilter(float[] input, float[] output) {
+        for (int i = 0; i < input.length; i++) {
+            output[i] = output[i] + ALPHA * (input[i] - output[i]);
+        }
+    }
+
+    // suppress constance forces (low frequency factors)
+    private void highPassFilter(float[] input, float[] constant_val, float[] output) {
+        for (int i = 0; i < input.length; i++) {
+            output[i] = input[i] - constant_val[i];
         }
     }
 
